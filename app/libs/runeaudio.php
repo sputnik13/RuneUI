@@ -1781,7 +1781,9 @@ function wrk_cleanDistro($redis)
     // reset libao config file
     sysCmd('cp /var/www/app/config/defaults/libao.conf /etc/libao.conf');
     // reset shairport starter script
-    sysCmd('cp /var/www/app/config/defaults/shairport.service /usr/lib/systemd/system/shairport.service');
+    //sysCmd('cp /var/www/app/config/defaults/shairport.service /usr/lib/systemd/system/shairport.service');
+    sysCmd('cp /var/www/app/config/defaults/shairport-sync.service /usr/lib/systemd/system/shairport-sync.service');
+    sysCmd('cp /var/www/app/config/defaults/shairport-sync.conf /etc/shairport-sync.conf');
     // reset spop config file
     sysCmd('cp /var/www/app/config/defaults/spopd.conf /etc/spop/spopd.conf');
     // reset mpdscribble config file
@@ -2357,8 +2359,11 @@ function wrk_shairport($redis, $ao, $name = null)
     }
     $acard = json_decode($redis->hget('acards', $ao));
     runelog('acard details: ', $acard);
-    $file = '/usr/lib/systemd/system/shairport.service';
-    $newArray = wrk_replaceTextLine($file, '', 'ExecStart=', 'ExecStart=/usr/bin/shairport -w --name='.$name.' --on-start=$ON --on-stop=$OFF --meta-dir=/var/run/shairport -o alsa -- -d '.$acard->device);
+    //$file = '/usr/lib/systemd/system/shairport.service';
+    $file = '/usr/lib/systemd/system/shairport-sync.service';
+    //$newArray = wrk_replaceTextLine($file, '', 'ExecStart=', 'ExecStart=/usr/bin/shairport -w --name='.$name.' --on-start=$ON --on-stop=$OFF --meta-dir=/var/run/shairport -o alsa -- -d '.$acard->device);
+    //$newArray = wrk_replaceTextLine($file, '', 'ExecStart=', 'ExecStart=/usr/bin/shairport -w --name='.$name.' --on-start=$ON --on-stop=$OFF --meta-dir=/var/run/shairport -o alsa -- -d '.$acard->device);
+    $newArray = wrk_replaceTextLine($file, '', 'ExecStart=', 'ExecStart=/usr/bin/shairport-sync -a '.$name.' -- -d '.$acard->device);
     runelog('shairport.service :', $newArray);
     // Commit changes to /usr/lib/systemd/system/shairport.service
     $fp = fopen($file, 'w');
@@ -2379,7 +2384,8 @@ function wrk_shairport($redis, $ao, $name = null)
     sysCmd('systemctl daemon-reload');
     if ($redis->hGet('airplay','enable') === '1') {
         runelog('restart shairport');
-        sysCmd('systemctl restart shairport');
+        //sysCmd('systemctl restart shairport');
+        sysCmd('systemctl restart shairport-sync');
     }
     // set process priority
     sysCmdAsync('sleep 1 && rune_prio nice');
@@ -2827,7 +2833,8 @@ function wrk_changeHostname($redis, $newhostname)
     // update airplayname
     if ($redis->hGet('airplay','name') === $hn[0]) {
         $redis->hSet('airplay','name', $newhostname);
-        if ($redis->hGet('airplay','enable') === '1') sysCmd('systemctl restart shairport');
+        //if ($redis->hGet('airplay','enable') === '1') sysCmd('systemctl restart shairport');
+        if ($redis->hGet('airplay','enable') === '1') sysCmd('systemctl restart shairport-sync');
     }
     // update AVAHI serice data
     wrk_avahiconfig($newhostname);

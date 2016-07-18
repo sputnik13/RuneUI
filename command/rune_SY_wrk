@@ -235,7 +235,8 @@ wrk_mpdconf($redis,'refresh');
 // start shairport
 if ($redis->hGet('airplay', 'enable') === '1') {
     runelog("service: SHAIRPORT start",'');
-    sysCmd('systemctl start shairport');
+    //sysCmd('systemctl start shairport');
+    sysCmd('systemctl start shairport-sync');
 }
 // start udevil
 if ($redis->get('udevil') === '1') {
@@ -324,9 +325,11 @@ $redis->pconnect('/tmp/redis.sock');
                         runelog('service: SHAIRPORT start');
                         // start or re-start shairport service
                         if (isset($restart)) {
-                            sysCmd('systemctl restart shairport');
+                            //sysCmd('systemctl restart shairport');
+                            sysCmd('systemctl restart shairport-sync');
                         } else {
-                            sysCmd('systemctl start shairport');
+                            //sysCmd('systemctl start shairport');
+                            sysCmd('systemctl start shairport-sync');
                         }
                         $redis->hSet('airplay', 'enable', 1);
                         // send notfy to UI
@@ -335,7 +338,8 @@ $redis->pconnect('/tmp/redis.sock');
                     // stop shairport
                     if ($job->action === 'stop') {
                         runelog('service: SHAIRPORT stop');
-                        sysCmd('systemctl stop shairport');
+                        //sysCmd('systemctl stop shairport');
+                        sysCmd('systemctl stop shairport-sync');
                         $redis->hSet('airplay', 'enable', 0);
                         // send notfy to UI
                         ui_notify_async('AirPlay', 'AirPlay feature disabled', $jobID);
